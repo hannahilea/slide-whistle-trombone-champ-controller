@@ -7,7 +7,7 @@ This example acts as a BLE HID keyboard to peer devices.
 Attach five buttons with pullup resistors to Feather nRF52840
   each button will send a configurable keycode to mobile device or computer
 """
-import time
+# import time
 import board
 from digitalio import DigitalInOut, Direction
 
@@ -19,14 +19,16 @@ from adafruit_ble.services.standard.device_info import DeviceInfoService
 from adafruit_hid.keyboard import Keyboard
 from adafruit_hid.keyboard_layout_us import KeyboardLayoutUS
 from adafruit_hid.keycode import Keycode
+from adafruit_hid.mouse import Mouse
 
-button_1 = DigitalInOut(board.A2) #D11)
+button_1 = DigitalInOut(board.A2)  # D11)
 button_1.direction = Direction.INPUT
 
 hid = HIDService()
 
-device_info = DeviceInfoService(software_revision=adafruit_ble.__version__,
-                                manufacturer="Adafruit Industries")
+device_info = DeviceInfoService(
+    software_revision=adafruit_ble.__version__, manufacturer="Adafruit Industries"
+)
 advertisement = ProvideServicesAdvertisement(hid)
 advertisement.appearance = 961
 scan_response = Advertisement()
@@ -43,6 +45,8 @@ else:
 
 kbd = Keyboard(hid.devices)
 kl = KeyboardLayoutUS(kbd)
+# mouse = Mouse(usb_hid.devices)
+
 while True:
     while not ble.connected:
         pass
@@ -54,11 +58,12 @@ while True:
         new_value = button_1.value
         if b_value != new_value:
             b_value = new_value
-            print("Value changed!") # debug
+            print("Value changed!")  # debug
             if b_value:
-#               print("button pressed")  # for debug in REPL
-                kbd.press(Keycode.E)
+                kbd.press(Keycode.E) # TODO-future: use different key value for click?
             else:
                 kbd.release(Keycode.E)
+
+        # check/update mouse state
 
     ble.start_advertising(advertisement)
