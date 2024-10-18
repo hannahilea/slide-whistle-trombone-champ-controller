@@ -1,15 +1,13 @@
-# SPDX-FileCopyrightText: 2020 John Park for Adafruit Industries
-#
-# SPDX-License-Identifier: MIT
-
 """
 This example acts as a BLE HID keyboard to peer devices.
-Attach five buttons with pullup resistors to Feather nRF52840
-  each button will send a configurable keycode to mobile device or computer
+Attach one button with a pullup resistor and one potentiometer to Feather nRF52840
+  the button will send a configurable keycode to mobile device or computer
+  the slider will send a mouse movement in the y-axis direction to mobile device or computer
 """
-# import time
 import board
+import math
 from digitalio import DigitalInOut, Direction
+from analogio import AnalogIn
 
 import adafruit_ble
 from adafruit_ble.advertising import Advertisement
@@ -23,6 +21,7 @@ from adafruit_hid.mouse import Mouse
 
 button_1 = DigitalInOut(board.A2)  # D11)
 button_1.direction = Direction.INPUT
+pot_in = AnalogIn(board.A1)
 
 hid = HIDService()
 
@@ -45,25 +44,56 @@ else:
 
 kbd = Keyboard(hid.devices)
 kl = KeyboardLayoutUS(kbd)
-# mouse = Mouse(usb_hid.devices)
+mouse = Mouse(hid.devices)
+
+
+def get_voltage(pin):
+    return (pin.value * 3.3) / 65536
+
+
+def map_pot_percent(voltage, v_min, v_max):
+    f = (voltage - v_min) / (v_max - v_min)
+    return math.trunc(f * 100)
+
+
+MAX_SLIDER_Y_VALUE = 700
+CHANGE_TOLERANCE = 10
+NUM_SMOOTHED_VALUES = 60
 
 while True:
     while not ble.connected:
         pass
     print("Start typing:")
 
-    b_value = False
+    button_state = False
+    slider_value = 0.0
+    slider_values = [0 for _ in range(NUM_SMOOTHED_VALUES)]
     while ble.connected:
         # check/update button state
         new_value = button_1.value
-        if b_value != new_value:
-            b_value = new_value
+        if button_state != new_value:
+            button_state = new_value
             print("Value changed!")  # debug
-            if b_value:
-                kbd.press(Keycode.E) # TODO-future: use different key value for click?
+            if button_state:
+                print("Down")
+                # kbd.press(Keycode.E) # TODO-future: use different key value for click?
             else:
-                kbd.release(Keycode.E)
+                # kbd.release(Keycode.E)
+                mouse.move(y=100)
 
         # check/update mouse state
+        voltage = get_voltage(pot_in)
+        slider_current = MAX_SLIDER_Y_VALUE * map_pot_percent(voltage, 1.62, 2.13) / 100
+        slider_values.append(slider_current)
+        slider_values.pop(0)
+
+        slider_current = sum(slider_values)/NUM_SMOOTHED_VALUES
+        diff = math.trunc(slider_value - slider_current)
+
+        # print('y:{0}, V:{1}; raw:{2}'.format(slider_current, voltage, pot_in.value))
+        if abs(diff) >= CHANGE_TOLERANCE:
+            print(slider_current, voltage, diff)
+            mouse.move(y=diff)
+            slider_value = slider_current
 
     ble.start_advertising(advertisement)
