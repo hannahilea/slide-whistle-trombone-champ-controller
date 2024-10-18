@@ -2,8 +2,27 @@
 Nifty name TBD. 
 
 ## Dev log
-To do: clean up!
+### Punch list:
+Project:
+- [ ] Try out breadboard with game
+- [ ] Additional button/switch for on-off  (e.g. whether or not to send mouse commands...)
+- [ ] Move electronics to devboard + slide whistle 
+- [ ] Clean up documentation
+- [ ] Stretch: print pcb?
 
+Meta: 
+- [ ] Shift over to VSCode instead of Mu Editor, document workflow
+- [ ] Better-structure project code (separate files, main entrypoint, etc)
+
+### 18 Oct 2024
+- Set up mouse input mapping, etc
+- Resources for future:
+    - https://docs.circuitpython.org/en/latest/shared-bindings/index.html
+    - https://marketplace.visualstudio.com/items?itemName=ms-vscode.vscode-serial-monitor 
+    -  https://docs.circuitpython.org/en/latest/docs/library/index.html
+    - https://learn.adafruit.com/circuitpython-essentials/circuitpython-hid-keyboard-and-mouse 
+
+### Initial development
 - Starting with https://learn.adafruit.com/introducing-the-adafruit-nrf52840-feather 
 
 1. Plugged in battery — lights on/!
