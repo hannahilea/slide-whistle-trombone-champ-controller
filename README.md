@@ -14,6 +14,15 @@ Meta:
 - [ ] Shift over to VSCode instead of Mu Editor, document workflow
 - [ ] Better-structure project code (separate files, main entrypoint, etc)
 
+### 29 Oct 2024
+- AF poked at circuitry, simplified some items
+- We drew up schematic in [TinkerCAD](https://www.tinkercad.com/things/6Mko6kfHVgg-trombonechamp-1)
+    - see downloaded image! also schematic
+- Other component data sheet info:
+    - yellow switch (adafruit): https://cdn-shop.adafruit.com/product-files/5516/5516_switch.png
+    - slide potentiometer: https://www.adafruit.com/product/4219 and https://cdn-shop.adafruit.com/product-files/4219/4219_C11375.pdf
+
+
 ### 18 Oct 2024
 - Set up mouse input mapping, etc
 - Resources for future:
