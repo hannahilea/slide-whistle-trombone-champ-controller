@@ -50,8 +50,10 @@ else:
     print(ble.connections)
 
 # Set up keyboard
-kbd = Keyboard(hid.devices)
-kl = KeyboardLayoutUS(kbd)
+# kbd = Keyboard(hid.devices)
+# kl = KeyboardLayoutUS(kbd)
+
+# Set up mouse
 mouse = Mouse(hid.devices)
 
 # Helper functions for slider mapping
@@ -88,11 +90,13 @@ def main_event_loop():
                 button_state = new_value
                 print("Value changed!")  # debug
                 if button_state:
-                    kbd.press(Keycode.SPACE)
+                    #kbd.press(Keycode.SPACE)
+                    mouse.press(Mouse.LEFT_BUTTON);
                     print(x, voltage, x - voltage)
                     pass
                 else:
-                    kbd.release(Keycode.SPACE)
+                    #kbd.release(Keycode.SPACE)
+                    mouse.release(Mouse.LEFT_BUTTON);
                     pass
 
             # Use slider voltage to update mouse position
