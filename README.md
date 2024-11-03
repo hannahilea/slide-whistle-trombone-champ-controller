@@ -4,15 +4,20 @@ Nifty name TBD.
 ## Dev log
 ### Punch list:
 Project:
-- [ ] Try out breadboard with game
-- [ ] Additional button/switch for on-off  (e.g. whether or not to send mouse commands...)
+- [x] Try out breadboard with game
+- [ ] ~~Additional button/switch for on-off  (e.g. whether or not to send mouse commands...)~~
+- [ ] Software: use on-board button to turn on/off
 - [ ] Move electronics to devboard + slide whistle 
 - [ ] Clean up documentation
-- [ ] Stretch: print pcb?
+- [ ] Stretch: print pcb? prob not yet
 
 Meta: 
 - [ ] Shift over to VSCode instead of Mu Editor, document workflow
 - [ ] Better-structure project code (separate files, main entrypoint, etc)
+
+### 2 Nov 2024
+
+
 
 ### 29 Oct 2024
 - AF poked at circuitry, simplified some items
