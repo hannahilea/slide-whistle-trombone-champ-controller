@@ -3,7 +3,7 @@
 Controller for Trombone Champ by acting as a BLE HID keyboard to peer devices.
   Attach one button with a pullup resistor and one potentiometer to Feather nRF52840
   The button will send a configurable keycode to mobile device or computer;
-  the slider will send a mouse movement in the y-axis direction to mobile device or computer.
+  the slider will send a mouse movement in the y-axis direction.
 """
 import board
 import math
@@ -15,20 +15,19 @@ from adafruit_ble.advertising import Advertisement
 from adafruit_ble.advertising.standard import ProvideServicesAdvertisement
 from adafruit_ble.services.standard.hid import HIDService
 from adafruit_ble.services.standard.device_info import DeviceInfoService
-from adafruit_hid.keyboard import Keyboard
-from adafruit_hid.keyboard_layout_us import KeyboardLayoutUS
-from adafruit_hid.keycode import Keycode
 from adafruit_hid.mouse import Mouse
 
 # Global constants
-MAX_SLIDER_Y_VALUE = 900 # roughly corresponds to pixel height of screen
-CHANGE_TOLERANCE = 12    # "pixel" change threshold; above this tolerance triggers mouse movement
-NUM_SMOOTHED_VALUES = 60 # Buffer for running average of slider values
+MAX_SLIDER_Y_VALUE = 300  # roughly corresponds to pixel height of screen
+MOUSE_Y_CHANGE_TOLERANCE = 12    # "pixel" change threshold; above this tolerance triggers mouse movement
+NUM_SMOOTHED_SLIDER_INPUTS = 60  # Buffer for running average of slider values
 
 # Initialize the onboard controls
-button_1 = DigitalInOut(board.A2)
-button_1.direction = Direction.INPUT
-pot_in = AnalogIn(board.A1)
+clicky_button = DigitalInOut(board.A2)
+clicky_button.direction = Direction.INPUT
+slide_potentiometer = AnalogIn(board.A1)
+onboard_button = DigitalInOut(board.SWITCH)
+onboard_button.direction = Direction.INPUT
 
 # Set up bluetooth connection
 hid = HIDService()
@@ -49,10 +48,6 @@ else:
     print("already connected")
     print(ble.connections)
 
-# Set up keyboard
-# kbd = Keyboard(hid.devices)
-# kl = KeyboardLayoutUS(kbd)
-
 # Set up mouse
 mouse = Mouse(hid.devices)
 
@@ -70,41 +65,60 @@ def main_event_loop():
             pass
         print("Bluetooth connected!")
 
-        button_state = False
-        slider_buffer = [0 for _ in range(NUM_SMOOTHED_VALUES)]
-        slider_previous = 0.0
-        x = get_voltage(pot_in)
+        is_clicky_button_pushed = False
+        is_onboard_button_pushed = False
+        send_commands_enabled = True
+
+        slider_buffer = [0 for _ in range(NUM_SMOOTHED_SLIDER_INPUTS)]
+        mouse_y_previous = 0.0
         while ble.connected:
-            # Get slider values
-            voltage = get_voltage(pot_in)
-            slider_current = MAX_SLIDER_Y_VALUE * map_pot_percent(voltage, 1.62, 2.13) / 100
-            slider_buffer.append(slider_current)
+
+            # Update whether mouse commands should be sent
+            _is_onboard_button_pushed = not onboard_button.value
+            if is_onboard_button_pushed != _is_onboard_button_pushed:
+                is_onboard_button_pushed = _is_onboard_button_pushed
+                if is_onboard_button_pushed:
+                    print("On-board button pressed!")
+
+                    # Update sending state
+                    send_commands_enabled = not send_commands_enabled
+
+                    # If sending is newly disabled, release the clicky button!
+                    if not send_commands_enabled and is_clicky_button_pushed:
+                        is_clicky_button_pushed = False
+                        mouse.release(Mouse.LEFT_BUTTON)
+
+                else:
+                    print("On-board button released")
+                    pass
+
+            if not send_commands_enabled:
+                continue
+
+            # Store current raw slider position from voltage
+            slider_voltage = get_voltage(slide_potentiometer)
+            slider_value_raw = MAX_SLIDER_Y_VALUE * map_pot_percent(slider_voltage, 1.62, 2.13) / 100
+            slider_buffer.append(slider_value_raw)
             slider_buffer.pop(0)
 
-            slider_current = sum(slider_buffer) / NUM_SMOOTHED_VALUES
-            diff = math.trunc(slider_previous - slider_current)
+            slider_buffer_avg = sum(slider_buffer) / NUM_SMOOTHED_SLIDER_INPUTS
+            mouse_y_diff = math.trunc(mouse_y_previous - slider_buffer_avg)
 
-            # check/update button state
-            new_value = button_1.value
-            if button_state != new_value:
-                button_state = new_value
-                print("Value changed!")  # debug
-                if button_state:
-                    #kbd.press(Keycode.SPACE)
-                    mouse.press(Mouse.LEFT_BUTTON);
-                    print(x, voltage, x - voltage)
-                    pass
+            # Check/update button state
+            _is_clicky_button_pushed = clicky_button.value
+            if is_clicky_button_pushed != _is_clicky_button_pushed:
+                is_clicky_button_pushed = _is_clicky_button_pushed
+                # print("Value changed!")  # debug
+                if is_clicky_button_pushed:
+                    mouse.press(Mouse.LEFT_BUTTON)
                 else:
-                    #kbd.release(Keycode.SPACE)
-                    mouse.release(Mouse.LEFT_BUTTON);
-                    pass
+                    mouse.release(Mouse.LEFT_BUTTON)
 
-            # Use slider voltage to update mouse position
-            elif abs(diff) >= CHANGE_TOLERANCE:
-                #print(slider_current, voltage, diff)
-                mouse.move(y=diff)
-                print("UPDATING: ", slider_previous, slider_current, diff)
-                slider_previous = slider_current
+            # Update mouse position
+            elif abs(mouse_y_diff) >= MOUSE_Y_CHANGE_TOLERANCE:
+                # print("UPDATING: ", mouse_y_previous, slider_buffer_avg, mouse_y_diff)
+                mouse.move(y=mouse_y_diff)
+                mouse_y_previous = slider_buffer_avg
 
         ble.start_advertising(advertisement)
 
