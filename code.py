@@ -1,9 +1,7 @@
 #!/usr/bin/env python3
 """
-Controller for Trombone Champ by acting as a BLE HID keyboard to peer devices.
-  Attach one button with a pullup resistor and one potentiometer to Feather nRF52840
-  The button will send a configurable keycode to mobile device or computer;
-  the slider will send a mouse movement in the y-axis direction.
+BLE HID keyboard controller for Trombone Champ game.
+Attach one button with a pullup resistor and one potentiometer to Feather nRF52840
 """
 import board
 import math
